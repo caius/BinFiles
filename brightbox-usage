@@ -1,0 +1,67 @@
+#!/usr/bin/env ruby
+# 
+#  brightbox-usage
+#  Figure out how much a brightbox cloud account is using.
+#  
+#  Usage:
+#   Pipe the output of `brightbox-servers list` into the script.
+#   `brightbox-servers list | brightbox-usage`
+# 
+#  Created by Caius Durling on 2011-09-11.
+#  Copyright 2011 SwedishCampground. All rights reserved.
+# 
+
+Sizes = {
+  "nano" => {
+    :ram => 512,
+    :disk => 20480,
+    :cpus => 2
+  },
+  "mini" => {
+    :ram => 1024,
+    :disk => 40960,
+    :cpus => 4
+  },
+  "small" => {
+    :ram => 2048,
+    :disk => 81920,
+    :cpus => 4
+  },
+  "medium" => {
+    :ram => 4096,
+    :disk => 163840,
+    :cpus => 8
+  },
+  "large" => {
+    :ram => 8192,
+    :disk => 327680,
+    :cpus => 8
+  }
+}
+
+sizes = $stdin.readlines.map do |line|
+  next unless line[/srv-/]
+
+  size = line[/srv-\w+\s+\w+\s+(\w+)/, 1]
+
+  Sizes[size]
+end.compact
+
+total_ram = sizes.inject(0) {|i, size| i + size[:ram] }
+total_disk = sizes.inject(0) {|i, size| i + size[:disk] }
+total_cpus = sizes.inject(0) {|i, size| i + size[:cpus] }
+
+# Yes it sucks, but it bloody works
+class Numeric
+  def delimit
+    big, small = to_s.split(".")
+    [big.reverse.split("").each_slice(3).to_a.map{|x| x.join("") }.join(",").reverse, small].compact.join(".")
+  end
+end
+
+puts <<-EOF
+Total usage:
+  Ram: #{(total_ram/1024.0).delimit}GB (#{total_ram.delimit}MB)
+  Disk: #{(total_disk/1024.0).delimit}GB (#{total_disk.delimit}MB)
+  CPUs: #{total_cpus.delimit}
+EOF
