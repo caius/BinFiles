@@ -1,0 +1,76 @@
+#!/bin/bash
+# 
+# Opens a new tab in terminal, cd'ing to the current directory.
+# Accepts an optional argument, which is the number of tabs to open.
+# 
+# It can also run a command in each tab, once opened. If the first 
+# argument is a number, then it opens that many tabs, passing the rest
+# of the arguments as the command to run in the new tab. Otherwise
+# any arguments are just passed to the new tab to run.
+# 
+# Eg:
+#   terminal_clone_tab # => Opens a new tab in the current dir
+#   terminal_clone_tab 5 # => Opens 5 new tabs in the current dir
+#   terminal_clone_tab echo "hi" # => Opens a new tab and runs `echo "hi"` in it
+#   terminal_clone_tab 5 echo "hi" # => Opens 5 new tabs, running `echo "hi"` in each
+# 
+# You can also run commands in the current shell after spawning new tabs:
+# 
+#   terminal_clone_tab; echo "bye" # => Opens a new tab, and runs `echo "bye"` in the first shell
+# 
+# Saved at http://gist.github.com/347785
+# 
+me=$(basename $0)
+
+repeat=0
+extra=""
+
+# If we've been passed at least one argument
+if [[ ! -z $1 ]]; then
+  # If the first arg is numerical
+  if [ "$1" -eq "$1" 2> /dev/null ]; then
+    # Then repeat this many times
+    repeat=$1
+    repeat=$(($repeat-1))
+
+    if [[ $repeat -gt 30 ]]; then
+      echo "repeat is larger than 30 - exiting"
+      exit 1
+    fi
+
+    # Now check to see if we have additional arguments
+    if [[ $# > 1 ]]; then
+      # This strips the first argument (because it's $repeat)
+      extra="${*:2}"
+    fi
+  else
+    extra="$*"
+  fi
+fi
+
+command_string=""
+if [[ "$extra" != "" ]]; then
+  command_string="$extra"
+fi
+
+repeat_string=""
+if [[ "$repeat" > 0 ]]; then
+  repeat_string="nt $repeat"
+  # If we have a command to run, pass it on to the next tab
+  if [[ "$command_string" != "" ]]; then
+    repeat_string="$repeat_string $command_string"
+  fi
+  # And close
+  repeat_string="$repeat_string;"
+fi
+
+# Alternate open tab
+# --    tell application "System Events" to tell process "Terminal" to keystroke "t" using command down
+osascript <<EOF
+  tell application "Terminal"
+    activate
+    tell application "System Events" to tell process "Terminal" to click menu item "New Tab" of menu "Shell" of menu bar 1
+    do script with command "cd \"$(pwd)\"; osascript -e 'tell application \"System Events\" to tell process \"Terminal\" to keystroke \"k\" using command down'; $(echo $repeat_string) $(echo $command_string)" in selected tab of the front window
+    return ""
+  end tell
+EOF
