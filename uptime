@@ -1,0 +1,31 @@
+#!/usr/bin/env zsh
+#
+#  uptime
+#  Easily find the uptime of a machine or process.
+# 
+#  Depends on:
+#    * ZSH
+#    * pgrep
+#
+#  Usage:
+# 
+#   uptime # prints out system uptime
+#   uptime <name> # finds process <name> and prints out start datetime
+# 
+#  Created by Caius Durling on 2011-09-12.
+#  Copyright 2011 SwedishCampground. All rights reserved.
+#
+
+
+if [[ -z "$1" ]]; then
+  # super
+  exec $(whence -p uptime)
+else
+  PID=$(pgrep -i "$1")
+  if [[ -z "$PID" ]]; then
+    echo "Couldn't find app '$1'"
+    exit 1
+  fi
+  START_TIME=$(ps -p $PID -o lstart=)
+  echo "$1 has been running for $(elapsed_time_since "$START_TIME")"
+fi
