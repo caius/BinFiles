@@ -1,0 +1,54 @@
+#!/usr/bin/env bash
+#
+#  terminal_theme_change
+#  Changes all open terminal tabs from dark to light theme, or vice versa
+#
+#  Created by Caius Durling on 2013-07-05.
+#  Copyright 2013 . All rights reserved.
+#
+
+
+if [[ "$1" == "--help" || "$1" == "-h" ]]; then
+  echo "USAGE: $0 [light]"
+  echo "Sets terminal theme to dark theme unless an argument is passed"
+  exit 1
+fi
+
+DARK_THEME_NAME="Homebrew"
+LIGHT_THEME_NAME="Basic"
+
+if [[ -z $1 ]]; then
+  theme_name=$DARK_THEME_NAME
+else
+  theme_name=$LIGHT_THEME_NAME
+fi
+
+osascript <<EOF
+tell application "Terminal"
+  set theme_name to "${theme_name}"
+  set theme_settings to null
+  
+  -- Find the right theme settings by name; have to for/each to find it
+  repeat with s in settings sets
+    if (name of s) is theme_name then
+      set theme_settings to s
+      exit repeat
+    end if
+  end repeat
+  
+  if theme_settings is null then
+    return "ERROR: Couldn't find theme with name '" & theme_name & "'"
+  end if
+  
+  -- Assign the theme to each tab of each window
+  repeat with w in windows
+    repeat with t in tabs of w
+      set current settings of t to theme_settings
+    end repeat
+  end repeat
+  
+  -- Make new tabs use same theme
+  set default settings to theme_settings
+end tell
+EOF
+echo "Changed terminal theme to ${theme_name}"
