@@ -3,17 +3,16 @@
 # Opens ../<current folder name>.tmproj
 #
 
-if ["/Users/caius", "/", File.expand_path("~"), (File.expand_path("~") + "/sources")].include? Dir.pwd
+home = File.expand_path("~")
+if [
+    "/",
+    home,
+    "#{home}/sources",
+    "#{home}/freeagent",
+    "#{home}/freeagent/src",
+  ].include? Dir.pwd
   puts "Not opening #{Dir.pwd.inspect} in mate"
   exit(1)
 end
 
-f = File.expand_path "../#{Dir.pwd.split("/").last}.tmproj"
-if File.exists? f
-  `open -a TextMate`
-  `open "#{f}"`
-  puts "Opened: #{f}"
-else
-  puts "Sorry, #{f} doesn't exist."
-  `mate .`
-end
+`mate .`
