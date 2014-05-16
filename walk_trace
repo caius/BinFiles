@@ -1,0 +1,81 @@
+#!/usr/bin/env ruby
+#
+# walk_trace [file]
+#
+# Useful for stepping through a backtrace, popping your editor open at each line within the backtrace, walking
+# from the outermost call to the innermost call.
+#
+# Call with a filename containing the trace (or `walk_trace <(pbpaste)` if it's on the clipboard.) Run from the root of the backtrace.
+# eg:
+#     $ cat ~/tmp/trace.txt
+#       app/models/invoice.rb:20
+#       app/models/invoice.rb:42
+#       app/controllers/invoice_controller.rb:5
+#     $ cd fac/freeagent; walk_trace ~/tmp/trace.txt
+#      < files open in your editor, one by one >
+#
+# Hit enter to open the next file, or ^C to quit at that point.
+#
+# * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+#
+# The MIT License (MIT)
+# Copyright © 2014 Caius Durling <dev@caius.name>
+#
+# Permission is hereby granted, free of charge, to any person obtaining a copy
+# of this software and associated documentation files (the “Software”), to deal
+# in the Software without restriction, including without limitation the rights
+# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+# copies of the Software, and to permit persons to whom the Software is
+# furnished to do so, subject to the following conditions:
+#
+# The above copyright notice and this permission notice shall be included in
+# all copies or substantial portions of the Software.
+#
+# THE SOFTWARE IS PROVIDED “AS IS”, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+# THE SOFTWARE.
+#
+# * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+
+
+FILE_LINE_REGEX = %r{(\S+):(\d+)}
+
+def find_tool(name, path = ENV["PATH"])
+  path.split(":").find { |dir| File.exist?(dir) && File.directory?(dir) && File.exist?(File.join(dir, name)) }
+end
+
+COMMAND_BUILDER = if find_tool("mate")
+  lambda { |file, line_number| [file, "-l", line_number] }
+elsif find_tool("subl")
+  lambda { |file, line_number| ["#{file}:#{line_number}"] }
+else
+  fail "Can't find mate or subl; please implement handling your editor"
+end
+
+
+data = ARGV.map {|input| IO.read(input) }.flatten.join
+
+if data.to_s == ""
+  puts "USAGE: walk_trace [TRACE.txt]"
+  puts
+  puts %{If you have the backtrace on the clipboard, you can do `walk_trace <(pbpaste)` to access it\nwithout a temporary file.}
+  puts %{Otherwise, save the backtrace to a file and pass the filename as the argument.}
+end
+
+data.split("\n").reverse.each do |line|
+  match = line.scan(FILE_LINE_REGEX).first
+  next unless match
+
+  file, line_number = match
+
+  puts "Opening #{file}:#{line_number}"
+
+  system "mate", *COMMAND_BUILDER.call(file, line_number)
+
+  print "Hit enter for next step.."
+  $stdin.gets
+end
