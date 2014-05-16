@@ -72,6 +72,10 @@ data.split("\n").reverse.each do |line|
 
   file, line_number = match
 
+  # CURSE YOU HONEYBADGER
+  file.sub!("[PROJECT_ROOT]/", "") if file["[PROJECT_ROOT]"]
+
+
   puts "Opening #{file}:#{line_number}"
 
   system "mate", *COMMAND_BUILDER.call(file, line_number)
@@ -79,3 +83,5 @@ data.split("\n").reverse.each do |line|
   print "Hit enter for next step.."
   $stdin.gets
 end
+
+puts "\n\nFinished!"
