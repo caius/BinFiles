@@ -66,20 +66,16 @@ if data.to_s == ""
   puts %{Otherwise, save the backtrace to a file and pass the filename as the argument.}
 end
 
-data.split("\n").reverse.each do |line|
+data.split("\n").map do |line|
   match = line.scan(FILE_LINE_REGEX).first
   next unless match
-
   file, line_number = match
-
   # CURSE YOU HONEYBADGER
   file.sub!("[PROJECT_ROOT]/", "") if file["[PROJECT_ROOT]"]
-
-
+  [file, line_number]
+end.uniq.reverse.each do |(file, line_number)|
   puts "Opening #{file}:#{line_number}"
-
   system "mate", *COMMAND_BUILDER.call(file, line_number)
-
   print "Hit enter for next step.."
   $stdin.gets
 end
