@@ -1,5 +1,8 @@
 #!/usr/bin/env bash
 
+set -o nounset
+set -o errexit
+
 NAME="$1"
 COMMAND="$2"
 
@@ -27,7 +30,7 @@ existing_screens="$(screen -ls | grep "$NAME" | cut -d '.' -f 1 | tr -d "\t")"
 if [[ ! -z $existing_screens ]]; then
   # Need to clear out existing screen
   for screenpid in $existing_screens; do
-    sessionpids="$(ps -axo ppid,pid | awk '{ if ($1 == "'$screenpid'") { print $2 } }')"
+    sessionpids="$(ps a -o ppid,pid | awk '{ if ($1 == "'$screenpid'") { print $2 } }')"
     kill -9 $sessionpids
   done
 fi
