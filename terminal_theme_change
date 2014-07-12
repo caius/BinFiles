@@ -17,7 +17,7 @@ fi
 DARK_THEME_NAME="Homebrew"
 LIGHT_THEME_NAME="Basic"
 
-if [[ -z $1 ]]; then
+if [[ -z $1 || "$1" == "dark" || "$1" == "--dark" ]]; then
   theme_name=$DARK_THEME_NAME
 else
   theme_name=$LIGHT_THEME_NAME
