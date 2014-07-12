@@ -1,0 +1,37 @@
+#!/usr/bin/env bash
+
+NAME="$1"
+COMMAND="$2"
+
+function usage {
+  echo "USAGE: run-screen NAME COMMAND"
+  echo
+  echo "NAME - name of screen instance. Used to check if existing screen running. Should be unique."
+  echo "COMMAND - Command and arguments to run inside screen window"
+}
+
+
+if [[ -z "$NAME" ]]; then
+  usage
+  exit 1
+fi
+
+if [[ -z $COMMAND ]]; then
+  usage
+  exit 1
+fi
+
+# Check if there's existing screens with same NAME and remove if so
+# NB: Commands inside the screen instances are kill -9'd
+existing_screens="$(screen -ls | grep "$NAME" | cut -d '.' -f 1 | tr -d "\t")"
+if [[ ! -z $existing_screens ]]; then
+  # Need to clear out existing screen
+  for screenpid in $existing_screens; do
+    sessionpids="$(ps -axo ppid,pid | awk '{ if ($1 == "'$screenpid'") { print $2 } }')"
+    kill -9 $sessionpids
+  done
+fi
+
+NR=$'\n'
+screen -dmS "$NAME"
+screen -S "$NAME" -p0 -X stuff "$COMMAND$NR"
