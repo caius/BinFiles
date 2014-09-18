@@ -1,0 +1,22 @@
+#!/usr/bin/env bash
+
+# Pass URL of a soundcloud track to download it as MP3
+# USAGE: `soundown http://soundcloud.com/pcmus/attachment`
+
+set -e
+
+track_json=$(curl -s "${1}" | grep "window.SC.bufferTracks.push" | head -1 | sed -Ee 's/window.SC.bufferTracks.push\(|\);$//g')
+
+media_url=$(echo "${track_json}" | jq -r ".streamUrl")
+mp3_title=$(echo "${track_json}" | jq -r ".title" | sed 's#/##')
+mp3_title="${mp3_title}.mp3"
+
+mp3_url=$(curl -sI "${media_url}" | awk '/Location/ { print $2 }')
+
+if [[ ! -z "${VERBOSE}" ]]; then
+    echo "Downloading '${mp3_title}' from ${mp3_url}"
+fi
+
+curl -o "${mp3_title}" "${mp3_url}"
+
+echo "Downloaded ${mp3_title}"
