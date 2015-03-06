@@ -23,32 +23,52 @@ else
   theme_name=$LIGHT_THEME_NAME
 fi
 
-osascript <<EOF
-tell application "Terminal"
-  set theme_name to "${theme_name}"
-  set theme_settings to null
-  
-  -- Find the right theme settings by name; have to for/each to find it
-  repeat with s in settings sets
-    if (name of s) is theme_name then
-      set theme_settings to s
-      exit repeat
-    end if
-  end repeat
-  
-  if theme_settings is null then
-    return "ERROR: Couldn't find theme with name '" & theme_name & "'"
-  end if
-  
-  -- Assign the theme to each tab of each window
-  repeat with w in windows
-    repeat with t in tabs of w
-      set current settings of t to theme_settings
-    end repeat
-  end repeat
-  
-  -- Make new tabs use same theme
-  set default settings to theme_settings
-end tell
+osascript -l JavaScript > /dev/null <<EOF
+ThemeChanger = {
+  application: Application("Terminal"),
+
+  themeForName: function(theme_name) {
+    return this.application.settingsSets.whose({name: theme_name})()[0]
+  },
+
+  tabsToChange: function() {
+    _tabsToChange = []
+    windows = this.application.windows()
+
+    for (var i = 0; i < windows.length; i++) {
+      w = windows[i]
+
+      // Ideally we would be able to ask terminal for command windows only, but I'm fucked if I know how.
+      // Attempt to grab the tabs instead, and skip the window if it errors
+      try {
+        tabs = w.tabs
+        for (var j = 0; j < tabs.length; j++) {
+          t = tabs[j]
+          _tabsToChange.push(t)
+        }
+      } catch (e) {
+      }
+    }
+
+    return _tabsToChange
+  },
+
+  changeTo: function(theme_name) {
+    theme = this.themeForName(theme_name)
+
+    this.application.defaultSettings = theme
+    this.application.startupSettings = theme
+
+    tabs = this.tabsToChange()
+
+    for (var k = 0; k < tabs.length; k++) {
+      t = tabs[k]
+      t.currentSettings = theme
+    }
+  }
+}
+
+ThemeChanger.changeTo("${theme_name}")
 EOF
+
 echo "Changed terminal theme to ${theme_name}"
