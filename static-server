@@ -1,0 +1,11 @@
+#!/usr/bin/env ruby
+
+require "rack"
+require "rack-livereload"
+
+# Poor man's middleware!
+app = -> (env) { [404, {"Content-Type" => "text/plain"}, ["Fot Nound"]] }
+app = Rack::Static.new(app, index: "index.html", urls: [""])
+app = Rack::LiveReload.new(app, no_swf: true, live_reload_port: 8080)
+
+Rack::Server.start app: app, server: :puma
