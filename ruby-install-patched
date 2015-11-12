@@ -1,0 +1,41 @@
+#!/usr/bin/env bash
+
+# Expects the following installed in homebrew:
+#
+#   * ruby-install
+#   * chruby
+
+set -e
+set -x
+
+version=$1
+
+if [[ -z version ]]; then
+  echo "USAGE: $0 [VERSION]"
+  
+fi
+
+mkdir -p $HOME/src
+rm -rf $HOME/src/ruby-$version
+
+# Compiles a list of patches ("-p url/patch1.txt -p url/patch2.txt" etc) from https://github.com/skaes/rvm-patchsets
+# for the version we're trying to install.
+patch_arguments=$(host="https://raw.githubusercontent.com/skaes/rvm-patchsets/master"
+# 1.9.x-pYYY & -preview versions have their versions handled slightly differently
+[[ $version = 1.9* ]] && version=$(echo $version | tr '-' /)
+[[ $version = *-preview* ]] && version=$(echo $version | sed -e 's/-preview[0-9]//')
+patch_paths=$(curl -fs $host/patchsets/ruby/$version/railsexpress)
+if [[ $? -eq 0 ]]; then
+  for path in $patch_paths; do
+    echo -n "-p $host/patches/ruby/$version/$path "
+  done
+fi)
+
+export CC=clang CFLAGS="-march=native -O3 -pipe -fomit-frame-pointer"
+ruby-install $patch_arguments ruby $version
+
+source $(brew --prefix)/opt/chruby/share/chruby/chruby.sh
+
+chruby-exec $version -- gem update --system
+chruby-exec $version -- gem install bundler
+chruby-exec $version -- gem install git-up
