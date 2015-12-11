@@ -1,0 +1,26 @@
+#!/usr/bin/env ruby
+#
+#  sort_ini_sections
+# 
+# Given an ini file as an argument (eg, ~/.gitconfig), sort the sections 
+# within it alphanumerically.
+#
+# Created by Caius Durling on 2015-12-11.
+# Copyright 2015 SwedishCampground. All rights reserved.
+# MIT License.
+#
+
+sections = Hash.new { |h,k| h[k] = "" }
+current_section = nil
+
+ARGF.each_line do |line|
+  if line =~ /^\s*\[([^\]]+)\]/
+    current_section = $1
+  end
+
+  sections[current_section] << line
+end
+
+sections.keys.sort.each do |k|
+  print sections[k]
+end
