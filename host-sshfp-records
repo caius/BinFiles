@@ -1,0 +1,30 @@
+#!/usr/bin/env bash
+
+SSHFP_RR_TYPE=44
+
+host="$1"
+
+if [[ -z $host ]]; then
+  echo "USAGE: $0 HOST"
+  exit 1
+fi
+
+function ssh_keyscan {
+  ssh-keyscan -t $1 $2 2> /dev/null | awk '{ print $3 }'
+}
+
+function hexify {
+  echo $1 | base64 --decode | openssl dgst -sha1 -hex
+}
+
+i=1
+for a in {rsa,dsa,ecdsa}; do
+  key=$(ssh_keyscan $a $host)
+  if [[ -z $key ]]; then
+    i=$(($i + 1))
+    continue
+  fi
+
+  echo "dns-rr=$host,$SSHFP_RR_TYPE,$i:1:$(hexify $key)"
+  i=$(($i + 1))
+done
