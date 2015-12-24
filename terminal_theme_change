@@ -7,6 +7,7 @@
 #  Copyright 2013 . All rights reserved.
 #
 
+set -e
 
 if [[ "$1" == "--help" || "$1" == "-h" ]]; then
   echo "USAGE: $0 [light]"
@@ -55,6 +56,10 @@ ThemeChanger = {
 
   changeTo: function(theme_name) {
     theme = this.themeForName(theme_name)
+
+    if (!theme) {
+      throw("Requested theme '" + theme_name + "' not found.")
+    }
 
     this.application.defaultSettings = theme
     this.application.startupSettings = theme
