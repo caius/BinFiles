@@ -14,7 +14,7 @@ if [[ "$1" == "--help" || "$1" == "-h" ]]; then
   exit 1
 fi
 
-DARK_THEME_NAME="Homebrew"
+DARK_THEME_NAME="IR_Black"
 LIGHT_THEME_NAME="Basic"
 
 if [[ -z $1 || "$1" == "dark" || "$1" == "--dark" ]]; then
