@@ -10,10 +10,14 @@ set -x
 
 version=$1
 
-if [[ -z version ]]; then
+if [[ -z $version ]]; then
   echo "USAGE: $0 [VERSION]"
-  
+  exit 1
 fi
+
+echo "Installing ruby ${version} with Rails Express patches applied"
+
+set -x
 
 mkdir -p $HOME/src
 rm -rf $HOME/src/ruby-$version
@@ -36,6 +40,6 @@ ruby-install $patch_arguments ruby $version
 
 source $(brew --prefix)/opt/chruby/share/chruby/chruby.sh
 
-chruby-exec $version -- gem update --system
-chruby-exec $version -- gem install bundler
-chruby-exec $version -- gem install git-up
+chruby $version
+gem update --system
+gem install bundler
