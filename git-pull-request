@@ -1,0 +1,6 @@
+#!/usr/bin/env zsh
+
+# Opens the pull request on github for the current project & branch
+# Creates a new pull request if none is found
+
+open "https://github.com/$(git remote show -n origin | grep -i fetch | cut -d":" -f 3)/pull/$(git current-branch)"
