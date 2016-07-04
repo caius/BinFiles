@@ -1,0 +1,43 @@
+#!/usr/bin/env ruby
+
+require "json"
+require "net/https"
+require "date"
+require "pathname"
+
+date = ARGV[0] ? Date.parse(ARGV[0]) : Date.today - 1
+
+after = date.to_time.utc.to_i
+before = after + 86_400
+
+uri = URI("https://www.strava.com/api/v3/athlete/activities")
+uri.query = "after=#{after}&before=#{before}"
+
+auth_token = Pathname.new("~/.strava_summary").expand_path.read.chomp
+
+data = Net::HTTP.start(uri.host, uri.port, :use_ssl => true) do |http|
+  req = Net::HTTP::Get.new(uri)
+  req.add_field("Authorization", "Bearer #{auth_token}")
+  res = http.request(req)
+
+  raise "Failed" unless Net::HTTPOK === res
+  JSON.parse(res.body)
+end
+
+distance_for = -> (type, data) { data.select {|a| a["type"] == type }.map {|a| a["distance"] }.inject(0, :+) }
+
+cycle = distance_for.("Ride", data) / 1000 # km
+swim = distance_for.("Swim", data) # m
+
+puts <<-EOF
+Strava Summary
+
+  Date:
+    #{Time.at(after).to_date}
+
+  Cycled:
+    #{cycle.round(2)} km
+
+  Swam:
+    #{swim.round(2)} m
+EOF
