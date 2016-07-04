@@ -1,0 +1,29 @@
+#!/usr/bin/env ruby
+
+inside_migration = false
+previous_line = ""
+
+ARGF.each_line do |line|
+  # Remove ANSI colours to make shit easier to reason with
+  line.gsub!(/\e\[(\d+)(;\d+)*m/, "")
+
+  if line =~ /Migrating to/
+    inside_migration = true
+    next
+  end
+
+  if query = line[%r@(?:^|-- :(?:\s+SQL)?)\s*\([\d.]+ms\)\s*(.*?)(?: /\*.+\*/)?$@, 1]
+    puts query << ";" unless %w(BEGIN COMMIT).include?(query)
+  end
+
+  if inside_migration && line =~ /(?:INSERT INTO|DELETE FROM) `schema_migrations`/
+    inside_migration = false
+  end
+
+  if previous_line =~ /COMMIT|DELETE FROM `schema_migrations`/ && line =~ /ActiveRecord::SchemaMigration Load/
+    # We're just dumping the schema now, so don't bother parsing anything
+    break
+  end
+
+  previous_line = line
+end
