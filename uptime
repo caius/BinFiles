@@ -19,7 +19,7 @@
 
 if [[ -z "$1" ]]; then
   # super
-  exec $(whence -p uptime)
+  /usr/bin/uptime
 else
   PID=$(pgrep -i "$1")
   if [[ -z "$PID" ]]; then
