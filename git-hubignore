@@ -1,0 +1,11 @@
+#!/usr/bin/env bash
+
+set -e
+
+if [[ -z $1 ]]; then
+  echo "LANG required" >> /dev/stderr
+  echo "USAGE: git hubignore LANG" >> /dev/stderr
+  exit 1
+fi
+
+curl -fL -o .gitignore "https://github.com/github/gitignore/raw/master/$1.gitignore"
