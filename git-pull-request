@@ -3,4 +3,6 @@
 # Opens the pull request on github for the current project & branch
 # Creates a new pull request if none is found
 
-open "https://github.com/$(git remote show -n origin | grep -i fetch | cut -d":" -f 3)/pull/$(git current-branch)"
+git_repo=$(git remote show -n origin | awk '$0 ~ /^ +Fetch URL/ { print $3 }' | sed -Ee 's#^.+[/:]([^/]+/[^/]+)$#\1#')
+git_branch=$(git current-branch)
+open "https://github.com/${git_repo}/pull/${git_branch}"
