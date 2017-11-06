@@ -1,0 +1,7 @@
+#!/usr/bin/env bash
+
+git pull --rebase --autostash
+
+for i in $(git remote show -n); do
+  git remote prune $i
+done
