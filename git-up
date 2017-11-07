@@ -1,7 +1,27 @@
 #!/usr/bin/env bash
 
-git pull --rebase --autostash
+pids=""
+errexit=0
 
+# Fetch everything first, so we can continue hereafter
+git fetch origin
+
+# Fork out rebasing current branch
+git rebase --autostash &
+pids="${pids} ${!}"
+
+# Fork out pruning remote branches
 for i in $(git remote show -n); do
-  git remote prune $i
+  git remote prune $i &
+  pids="${pids} ${!}"
 done
+
+# Wait for everything to complete
+for pid in $pids; do
+  wait $pid || let "errexit=1"
+done
+
+# If anything errored above, then we exit with an error
+if [ "$errexit" == "1" ]; then
+  exit 1
+fi
