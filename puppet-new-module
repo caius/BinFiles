@@ -1,0 +1,117 @@
+#!/usr/bin/env bash
+
+[[ "$TRACE" ]] && set -o xtrace
+set -o errexit
+set -o nounset
+set -o pipefail
+set -o noclobber
+
+if [[ -z ${1:-} ]]; then
+  echo "ERROR: module name required" >> /dev/stderr
+  echo "USAGE: puppet-new-module NAME" >> /dev/stderr
+  exit 1
+fi
+
+readonly MODULE_NAME="${1}"
+readonly MODULE_PATH="$(pwd)/puppet-${MODULE_NAME}"
+
+echo "Creating new module ${MODULE_NAME} at ${MODULE_PATH}"
+
+if [[ -d "${MODULE_PATH}" ]]; then
+  echo "ERROR: module path already exists, not overwriting"
+  exit 2
+fi
+
+echo "Creating all encompasing parent figure"
+mkdir -p ${MODULE_PATH}
+
+echo "Licensing bits and bytes as shareable"
+curl -so "${MODULE_PATH}/LICENSE" https://www.apache.org/licenses/LICENSE-2.0.txt
+
+echo "Structuring things for future parts"
+# Folders we might need
+mkdir -p ${MODULE_PATH}/files/ \
+  ${MODULE_PATH}/templates/ \
+  ${MODULE_PATH}/manifests/ \
+  ${MODULE_PATH}/lib/puppet/{provider,type}/ \
+  ${MODULE_PATH}/pkg/
+
+echo "Ignoring those parts we never need to track"
+cat > ${MODULE_PATH}/.gitignore <<-EOF
+/pkg/
+/tmp/
+EOF
+
+echo "Informing the world about ourselves"
+cat > ${MODULE_PATH}/metadata.json <<-JSON
+{
+  "name": "${USER}-${MODULE_NAME}",
+  "version": "0.1.0",
+  "author": "${USER}",
+  "summary": "TODO: Fill in",
+  "license": "Apache-2.0",
+  "source": "https://github.com/${USER}/puppet-${MODULE_NAME}",
+  "project_page": "https://github.com/${USER}/puppet-${MODULE_NAME}",
+  "issues_url": "https://github.com/${USER}/puppet-${MODULE_NAME}/issues",
+  "dependencies": [
+
+  ]
+}
+JSON
+
+echo "Easing the maintenance burden on you"
+cat > ${MODULE_PATH}/Rakefile <<-RUBY
+begin
+  require 'puppetlabs_spec_helper/rake_tasks'
+  require 'puppet_blacksmith/rake_tasks'
+rescue LoadError
+  \$stderr.puts "ERROR: can't load required dependencies"
+  \$stderr.puts
+  \$stderr.puts "Run \`gem install puppet-blacksmith puppetlabs_spec_helper' to install them"
+  exit 1
+end
+
+desc "Run all the check tasks"
+task :check => ['check:dot_underscore', 'check:git_ignore', 'check:symlinks', 'check:test_file']
+RUBY
+
+echo "Paying attention to changes"
+git -C ${MODULE_PATH} init
+git -C ${MODULE_PATH} git commit -m 'First!!!111oneone' --allow-empty
+
+echo "Basically adding stuff for ease"
+cat > ${MODULE_PATH}/manifests/init.pp <<-PUPPET
+# TODO: Describe module
+#
+class ${MODULE_NAME} {
+
+  include ${MODULE_NAME}::install, ${MODULE_NAME}::config, ${MODULE_NAME}::service
+
+  Class['${MODULE_NAME}::install'] -> Class['${MODULE_NAME}::config'] ~> Class['${MODULE_NAME}::service']
+
+}
+PUPPET
+
+cat > ${MODULE_PATH}/manifests/install.pp <<-PUPPET
+# @private Installs ${MODULE_NAME}
+class ${MODULE_NAME}::install {
+
+}
+PUPPET
+
+cat > ${MODULE_PATH}/manifests/config.pp <<-PUPPET
+# @private Configures ${MODULE_NAME}
+class ${MODULE_NAME}::config {
+
+}
+PUPPET
+
+cat > ${MODULE_PATH}/manifests/service.pp <<-PUPPET
+# @private Manages ${MODULE_NAME} service
+class ${MODULE_NAME}::service {
+
+}
+PUPPET
+
+
+echo "All done!"
