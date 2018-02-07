@@ -1,0 +1,30 @@
+#!/usr/bin/env ruby
+#
+# Given an input string containing multiple time units, convert them to seconds
+#
+# Example
+#
+#   $ echo "1 day, 2 hours, 4 mins, 2s" | duration2seconds
+#   "1 day, 2 hours, 4 mins, 2s" is 93842.0 seconds
+#
+
+input = ARGF.read.chomp
+secs = input.scan(/([\d\.]+)( ?[a-z]+)/i).map do |(valuestring, unit)|
+  value = Float(valuestring)
+  multiplier = case unit
+  when /d(ays?)?/i
+    60 * 60 * 24
+  when /h(ours?)?/i
+    60 * 60
+  when /m(in(ute)?s?)?/i
+    60
+  when /s(ec(onds?)?)?/i
+    1
+  else
+    raise "ERR: can't handle unit #{unit.inspect} for input #{input.inspect}"
+  end
+
+  value * multiplier
+end.inject(0, :+)
+
+puts "#{input.inspect} is #{secs} seconds"
