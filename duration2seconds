@@ -27,4 +27,8 @@ secs = input.scan(/([\d\.]+)( ?[a-z]+)/i).map do |(valuestring, unit)|
   value * multiplier
 end.inject(0, :+)
 
-puts "#{input.inspect} is #{secs} seconds"
+if $stdout.tty?
+  puts "#{input.inspect} is #{secs} seconds"
+else
+  puts secs
+end
