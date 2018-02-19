@@ -1,5 +1,11 @@
 #!/usr/bin/env bash
 
+[[ "$TRACE" ]] && set -o xtrace
+set -o errexit
+set -o nounset
+set -o pipefail
+set -o noclobber
+
 pids=""
 errexit=0
 
