@@ -1,0 +1,115 @@
+#!/usr/bin/env bash
+#
+# Original script by Alyssa: https://gist.github.com/alyssais/fea9ff6bcf7955b7f7a5e64656d611aa
+#
+# Modifications:
+#   - Piped list output through column
+#   - 2FA argument added for connecting (BUGGY)
+#
+# Known issues:
+#   - invalid connection name with 2fa hangs indefinitely
+#   - connect all doesn't work with 2fa
+#   - --2fa expects all connections to have 2fa window
+
+run_list() {
+  (echo "NAME STATUS "
+  osascript <<APPLESCRIPT 2>&1) |
+    tell application "Viscosity"
+      repeat with theConnection in connections
+        set theName to name of theConnection
+        set theState to state of theConnection
+        log theName & " " & theState & " "
+      end repeat
+    end tell
+APPLESCRIPT
+    column -txs " "
+}
+
+run_connect() {
+  twofa=false
+  declare -a connections
+
+  while arg="$1"; shift; do
+    case $arg in
+    "--2fa")
+      twofa=true
+      ;;
+    *)
+      connections+=("$arg")
+      ;;
+    esac
+  done
+
+  if [[ ${#connections[@]} -eq 0 ]]; then
+    osascript -e 'tell application "Viscosity" to connectall'
+  else
+
+    for name in "${connections[@]}"; do
+      osascript -e "tell application \"Viscosity\" to connect \"${name}\""
+
+      if $twofa; then
+        handle_two_factor_auth_window "${name}"
+      fi
+    done
+  fi
+}
+
+handle_two_factor_auth_window() {
+  name="$1"
+  osascript <<APPLESCRIPT > /dev/null
+    set PromptTitle to "Viscosity - ${name}"
+    tell application "Viscosity"
+      tell application "System Events"
+        tell process "Viscosity"
+          repeat until (exists window PromptTitle) and ((count of text fields of window PromptTitle) is 1)
+          end repeat
+
+          tell window PromptTitle
+            set value of text field 1 to "push"
+            click button "OK"
+          end tell
+        end tell
+      end tell
+    end tell
+APPLESCRIPT
+}
+
+run_disconnect() {
+  if [ "$#" -eq 0 ]; then
+    osascript -e 'tell application "Viscosity" to disconnectall'
+  else
+    while connection="$1"; shift; do
+      osascript -e "tell application \"Viscosity\" to disconnect \"$connection\""
+    done
+  fi
+}
+
+run_help() {
+  echo "Usage:"
+  echo "    $(basename "$0") [list]                 	# List available VPNs"
+  echo "    $(basename "$0") connect [VPN [...]]    	# Connect to specified VPNs (or all)"
+  echo "    $(basename "$0") disconnect [VPN [...]] 	# Disconnect from specified VPNs (or all)"
+}
+
+run_version() {
+  echo "vpn 1.0.0"
+}
+
+main() {
+  local command="$1"
+  shift
+
+  case "$command" in
+  list | "" ) run_list "$@" ;;
+  connect ) run_connect "$@" ;;
+  disconnect ) run_disconnect "$@" ;;
+  -h | --help ) run_help ;;
+  -v | --version ) run_version ;;
+  *)
+    echo "$(basename "$0"): unknown command: $command" 1>&2
+    exit 1
+    ;;
+  esac
+}
+
+main "$@"
