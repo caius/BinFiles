@@ -8,8 +8,6 @@ if [
     "/",
     home,
     "#{home}/sources",
-    "#{home}/freeagent",
-    "#{home}/freeagent/src",
   ].include? Dir.pwd
   puts "Not opening #{Dir.pwd.inspect} in mate"
   exit(1)
