@@ -1,0 +1,29 @@
+#!/usr/bin/env zsh
+
+[[ "$TRACE" ]] && set -o xtrace
+set -o errexit
+set -o nounset
+set -o pipefail
+set -o noclobber
+
+if ! whence -p fzf > /dev/null
+then
+  echo "ERROR: fzf not found. \$(brew install fzf)"
+fi
+
+readonly base_branch=$(git config --default master branch.base)
+readonly preview_log_command="git log --graph --pretty=format:'%s %C(blue)%d%Creset' ${base_branch}..{}"
+readonly other_branches=$(git short-recent | grep -v $(git current-branch))
+
+destination=$(
+  echo $other_branches | \
+    fzf \
+      --tiebreak=index \
+      --cycle \
+      --header="Current Branch: $(git current-branch)" \
+      --preview="${preview_log_command}"
+)
+
+if [[ ! -z $destination ]]; then
+  command git checkout "$destination"
+fi
