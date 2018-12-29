@@ -1,8 +1,19 @@
 #!/usr/bin/env zsh
 
-# Opens the pull request on github for the current project & branch
-# Creates a new pull request if none is found
+# Opens the {pull request,merge request} on git{hub,lab} for the current project & branch
 
-git_repo=$(git remote show -n origin | awk '$0 ~ /^ +Fetch URL/ { print $3 }' | sed -Ee 's#^.+[/:]([^/]+/[^/]+)$#\1#')
+git_url=$(git remote show -n origin | awk '$0 ~ /^ +Fetch URL/ { print $3 }')
+git_host=$(echo $git_url | sed -Ee 's#^.*@(.+):.*$#\1#')
+git_repo=$(echo $git_url | sed -Ee 's#^.+[/:]([^/]+/[^/]+)$#\1#')
 git_branch=$(git current-branch)
-open "https://github.com/${git_repo}/pull/${git_branch}"
+
+case $git_host in
+gitlab.com)
+  url_path="/merge_requests/new?merge_request%5Bsource_branch%5D=${git_branch}"
+  ;;
+*)
+  url_path="/pull/${git_branch}"
+  ;;
+esac
+
+open "https://${git_host}/${git_repo}/${url_path}"
