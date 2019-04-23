@@ -1,0 +1,27 @@
+#!/usr/bin/env bash
+
+[[ "$TRACE" ]] && set -o xtrace
+set -o errexit
+set -o nounset
+set -o pipefail
+set -o noclobber
+
+# Remove all existing ones
+rm -f $HOME/.ssh/sekey_*.pub
+
+ruby <<RUBY
+# frozen_string_literal: true
+
+SEPERATOR = "│"
+%x[sekey --list-keys].split("\n").map(&:chomp).select { |line|
+  line[SEPERATOR]
+}[1..-1].map do |line|
+  _, label, id = line.split(SEPERATOR).map(&:strip)
+
+  File.open("#{ENV["HOME"]}/.ssh/sekey_#{label.gsub(/\W+/, "_")}.pub", "w+") do |f|
+    f.puts(%x[sekey --export-key #{id}])
+  end
+
+  puts "Exported key #{label} (#{id})"
+end
+RUBY
