@@ -1,0 +1,45 @@
+#!/usr/bin/env ruby
+#
+# Given any number of ZSH history files, merges them into one on stdout.
+#
+# @example
+#
+#     zsh_history_merge ~/.zsh_history.bak /External/caius/.zsh_history > ~/.zsh_history
+#
+
+class Entry
+  attr_reader :timestamp, :execution_time, :command
+
+  def initialize(timestamp, execution_time, command)
+    @timestamp = Integer(timestamp)
+    @execution_time = Integer(execution_time)
+    @command = command
+  end
+
+  def to_s
+    ": %d:%d;%s\n" % [timestamp, execution_time, command]
+  end
+
+  def <=>(other)
+    case other
+    when Entry
+      if timestamp == other.timestamp
+        command <=> other.command
+      else
+        timestamp <=> other.timestamp
+      end
+    else
+      0
+    end
+  end
+end
+
+class Parser
+  attr_reader :entries
+
+  def initialize(io)
+    @entries = io.read.force_encoding(Encoding::ISO_8859_1).scan(/^: (\d+):(\d+);(.+?[^\\])$/m).map { |match| Entry.new(*match) }
+  end
+end
+
+puts Parser.new(ARGF).entries.sort.map(&:to_s)
