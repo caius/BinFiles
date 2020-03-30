@@ -19,7 +19,8 @@ SEPERATOR = "│"
   _, label, id = line.split(SEPERATOR).map(&:strip)
 
   File.open("#{ENV["HOME"]}/.ssh/sekey_#{label.gsub(/\W+/, "_")}.pub", "w+") do |f|
-    f.puts(%x[sekey --export-key #{id}])
+    f.print(%x[sekey --export-key #{id}].chomp)
+    f.puts " #{label}"
   end
 
   puts "Exported key #{label} (#{id})"
