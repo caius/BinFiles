@@ -1,6 +1,14 @@
 #!/bin/sh
 
-source /usr/local/share/chruby/chruby.sh
-chruby $(< ~/.ruby-version)
+if [[ -f /opt/homebrew/share/chruby/chruby.sh ]]; then
+  source /opt/homebrew/share/chruby/chruby.sh
+elif [[ -f /usr/local/share/chruby/chruby.sh ]]; then
+  source /usr/local/share/chruby/chruby.sh
+else
+  echo "chruby not found in /opt/homebrew or /usr/local" >> /dev/stderr
+  exit 2
+fi
+
+chruby $(cat ~/.ruby-version)
 
 exec ruby "$@"
