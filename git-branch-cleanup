@@ -1,3 +1,4 @@
 #!/usr/bin/env bash
 
 git branch --merged | egrep -v "$(git base-branch)|\\*" | awk '{print $1}' | xargs -L1 git branch -d
+git branch | awk '$3 ~ /\[gone\]/ { print $1 }' | xargs -L1 git branch -D
